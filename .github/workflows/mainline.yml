@@ -1,0 +1,76 @@
+name: Build albus (Moto Z2 Play) mainline kernel
+
+on:
+  push:
+    branches: [mainline]
+  workflow_dispatch:
+    inputs:
+      force_kernel:
+        description: 'Force kernel rebuild even if cached'
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: albus-mainline-kernel
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      # Kernel build chain: scripts/kernel.sh -> out/
+      # (Image.gz, DTB, modules.tar.gz, boot.img). Persist out/ keyed on the
+      # kernel inputs (patches + kernel.sh, which pins the base commit); a
+      # rebuild only happens when those inputs change or force_kernel is set.
+      - name: Restore cached kernel build
+        id: kcache
+        uses: actions/cache@v4
+        with:
+          path: out/
+          key: albus-kernel-${{ hashFiles('patches/**', 'scripts/kernel.sh') }}-v1
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update -yqq
+          sudo apt-get install -yqq bc bison flex gcc-aarch64-linux-gnu git gzip libssl-dev make python3
+
+      - name: Build kernel, dtbs, modules and boot.img
+        if: steps.kcache.outputs.cache-hit != 'true' || inputs.force_kernel == true
+        run: ./scripts/kernel.sh
+
+      - name: Verify kernel artifacts present (cached or built)
+        run: |
+          test -s out/boot.img
+          test -s out/Image.gz
+          test -s out/msm8953-motorola-albus.dtb
+          test -s out/modules.tar.gz
+          test -s out/kernel-release.txt
+
+      - name: Upload kernel artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: albus-mainline
+          if-no-files-found: error
+          path: |
+            out/boot.img
+            out/boot.img.sha256
+            out/Image.gz
+            out/msm8953-motorola-albus.dtb
+            out/modules.tar.gz
+            out/kernel-release.txt
+
+      - name: Build summary
+        run: |
+          {
+            echo "kernel_release=$(cat out/kernel-release.txt)"
+            echo "boot_img_sha256=$(cut -d' ' -f1 out/boot.img.sha256)"
+          } >> "$GITHUB_STEP_SUMMARY"
