@@ -40,12 +40,18 @@ import sys, os
 tree = sys.argv[1]
 status = os.path.join(tree, "var/lib/dpkg/status")
 with open(status) as f:
-    data = f.read()
-data = data.replace("Status: install ok unpacked\n", "Status: install ok installed\n")
-data = data.replace("Status: install ok half-configured\n", "Status: install ok installed\n")
+    lines = f.readlines()
+out = []
+flipped = 0
+for ln in lines:
+    if ln.startswith("Status:") and ln.rstrip().endswith("unpacked"):
+        out.append("Status: install ok installed\n")
+        flipped += 1
+    else:
+        out.append(ln)
 with open(status, "w") as f:
-    f.write(data)
-print("dpkg status entries marked configured")
+    f.writelines(out)
+print("dpkg status entries marked configured:", flipped)
 PY
 
 # System users and groups the services require (these are normally created
@@ -68,28 +74,28 @@ def add_unique(path, lines, key_idx=0, keys=()):
                 f.write(ln + "\n")
 
 USERS = {
-    "passwd": [
+    "etc/passwd": [
         "messagebus:x:104:104:daemon:/nonexistent:/usr/sbin/nologin",
         "dnsmasq:x:105:105:dnsmasq daemon:/var/lib/misc:/usr/sbin/nologin",
         "sshd:x:106:106:sshd privilege separation:/run/sshd:/usr/sbin/nologin",
         "_polkitd:x:107:107:polkit daemon:/nonexistent:/usr/sbin/nologin",
         "_apt:x:108:65534:apt package manager:/nonexistent:/usr/sbin/nologin",
     ],
-    "group": [
+    "etc/group": [
         "messagebus:x:104:",
         "dnsmasq:x:105:",
         "sshd:x:106:",
         "polkitd:x:107:",
         "_apt:x:108:",
     ],
-    "shadow": [
+    "etc/shadow": [
         "messagebus:!::0::::::",
         "dnsmasq:!::0::::::",
         "sshd:!::0::::::",
         "_polkitd:!::0::::::",
         "_apt:!::0::::::",
     ],
-    "gshadow": [
+    "etc/gshadow": [
         "messagebus:!::",
         "dnsmasq:!::",
         "sshd:!::",
