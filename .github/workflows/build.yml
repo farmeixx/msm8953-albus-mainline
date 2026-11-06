@@ -27,7 +27,8 @@ jobs:
         run: ./scripts/kernel.sh
 
       - name: Build Debian rootfs image (debian-albus.ext4)
-        run: ./scripts/rootfs.sh
+        # debootstrap and mount -o loop need real root; runners get passwordless sudo
+        run: sudo ./scripts/rootfs.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
