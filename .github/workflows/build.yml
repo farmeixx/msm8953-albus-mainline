@@ -35,7 +35,8 @@ jobs:
           key: albus-kernel-${{ hashFiles('patches/**', 'scripts/kernel.sh') }}-v1
 
       - name: Install toolchain
-        if: steps.kcache.outputs.cache-hit != 'true' || inputs.force_kernel == true
+        # debootstrap/e2fsprogs etc. are needed by the rootfs step even when
+        # the kernel came from cache, so this is unconditional.
         run: |
           sudo apt-get update -yqq
           sudo apt-get install -yqq bc bison flex gcc-aarch64-linux-gnu git gzip libssl-dev make python3 debootstrap e2fsprogs kmod debian-archive-keyring openssh-client
