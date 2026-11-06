@@ -37,9 +37,11 @@ sudo mmdebstrap \
 # Device overlay: sshd (USB-only open root), USB RNDIS services,
 # NetworkManager policy and the albus helper scripts.
 sudo cp -a "$ROOT/distros/debian/rootfs/." "$STAGE/"
-# Windows authoring can store units with exec bits; systemd configs must be 644.
-sudo find "$STAGE/etc/systemd/system" "$STAGE/etc/ssh" "$STAGE/etc/NetworkManager" \
-  -type f ! -path '*/bin/*' -exec chmod 0644 {} +
+# Windows authoring can store units with exec bits; systemd configs must be
+# 0644. Scope the normalization strictly: unit/NM trees only — never /etc/ssh
+# (the host keys live there and their private mode must stay 0600).
+sudo find "$STAGE/etc/systemd/system" "$STAGE/etc/NetworkManager" \
+  -type f -exec chmod 0644 {} +
 sudo find "$STAGE/usr/local/bin" -type f -exec chmod 0755 {} +
 # Install original device firmware as regular files; never mount vendor/modem.
 bash "$ROOT/sh/firmware.sh" install "$STAGE"
@@ -114,6 +116,9 @@ sudo mount --bind /dev "$STAGE/dev"
 sudo mount -t proc proc "$STAGE/proc"
 sudo mount -t sysfs sysfs "$STAGE/sys"
 sudo install -d -m 0755 "$STAGE/run/sshd"
+# Private host keys must be root-only; sshd refuses to start otherwise.
+sudo chmod 0600 "$STAGE"/etc/ssh/ssh_host_*_key
+sudo chmod 0644 "$STAGE"/etc/ssh/ssh_host_*_key.pub
 sudo chroot "$STAGE" /usr/sbin/sshd -t
 
 test -L "$STAGE/etc/systemd/system/multi-user.target.wants/NetworkManager.service" || \

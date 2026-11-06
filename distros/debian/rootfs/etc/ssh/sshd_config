@@ -1,11 +1,6 @@
-# Albus (Moto Z2 Play) mainline: the image owns sshd_config outright, because
-# the bookworm openssh-server deb no longer ships /etc/ssh/sshd_config (it is
-# created by the postinst, which the headless rootfs build skips). The
-# Include stays first so sshd_config.d drop-ins (10-usb-ssh.conf) drive the
-# USB policy.
+# Albus (Moto Z2 Play) mainline: the bookworm openssh-server deb does not ship
+# /etc/ssh/sshd_config, so the image provides the distro-default shape itself:
+# drop-ins (10-usb-ssh.conf) drive the USB-only policy, host keys are picked
+# up by their stock names in /etc/ssh (key generation matches channel-rootfs).
 Include /etc/ssh/sshd_config.d/*.conf
-HostKey /etc/ssh/ssh_host_rsa_key
-HostKey /etc/ssh/ssh_host_ecdsa_key
-HostKey /etc/ssh/ssh_host_ed25519_key
-UsePAM yes
 Subsystem sftp /usr/lib/openssh/sftp-server
