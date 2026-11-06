@@ -36,7 +36,8 @@ jobs:
 
       - name: Build the Debian rootfs image (debian-albus.ext4)
         run: |
-          sudo env KERNEL_MODULES_ARCHIVE="$PWD/.work/kernel/modules.tar.gz" \
+          sudo env OUT_DIR="$PWD/out" \
+            KERNEL_MODULES_ARCHIVE="$PWD/.work/kernel/modules.tar.gz" \
             KERNEL_RELEASE="$(cat .work/kernel/kernel-release.txt)" \
             bash sh/build.sh
 
