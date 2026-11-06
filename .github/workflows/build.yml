@@ -21,7 +21,7 @@ jobs:
       - name: Install toolchain
         run: |
           sudo apt-get update -yqq
-          sudo apt-get install -yqq bc bison flex gcc-aarch64-linux-gnu git gzip libssl-dev make python3 debootstrap qemu-user-static e2fsprogs kmod
+          sudo apt-get install -yqq bc bison flex gcc-aarch64-linux-gnu git gzip libssl-dev make python3 debootstrap qemu-user-static e2fsprogs kmod debian-archive-keyring
 
       - name: Build kernel, dtbs, modules and boot.img
         run: ./scripts/kernel.sh

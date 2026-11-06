@@ -23,7 +23,7 @@ mkdir -p "$WORK"
 TREE="$WORK/rootfs"
 
 debootstrap --arch=arm64 --variant=minbase --foreign \
-	--include=systemd,systemd-sysv,dbus,network-manager,wpa_supplicant,openssh-server,dnsmasq,iproute2,e2fsprogs \
+	--include=systemd,systemd-sysv,dbus,network-manager,wpasupplicant,openssh-server,dnsmasq,iproute2,e2fsprogs,ca-certificates,wireless-regdb \
 	"$DEB_CODENAME" "$TREE" "$DEB_MIRROR"
 
 cp /usr/bin/qemu-aarch64-static "$TREE/usr/bin/"
@@ -34,6 +34,11 @@ rm -rf "$TREE/debootstrap"
 # Passwordless root over USB RNDIS (empty password, cleared via /etc/shadow).
 sed -i 's|^root:[^:]*:|root::|' "$TREE/etc/shadow"
 test "$(grep '^root:' "$TREE/etc/shadow" | cut -d: -f2)" = ""
+
+# Debian enables dnsmasq.service by default; it would fight with the
+# dnsmasq instance started by usb-gadget.service on the gadget interface.
+rm -f "$TREE/etc/systemd/system/multi-user.target.wants/dnsmasq.service" \
+	  "$TREE/etc/systemd/system/sockets.target.wants/dnsmasq.socket"
 
 echo albus > "$TREE/etc/hostname"
 cp -a "$ROOT/overlay/." "$TREE/"
