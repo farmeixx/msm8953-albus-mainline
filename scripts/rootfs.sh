@@ -43,8 +43,10 @@ echo "unpacked packages: $UNPACKED_VAR"
 # conffiles as .dpkg-new (or drops them entirely), because the configure
 # step would resolve them. Re-extract every package's data tarball so the
 # real files land, then resolve any .dpkg-new placeholders left over.
-# This is what restores /etc/shadow, /etc/gshadow, /etc/ssh/sshd_config,
-# /etc/ssh/moduli, /etc/NetworkManager/NetworkManager.conf etc.
+# This restores /etc/shadow, /etc/gshadow, /etc/ssh/moduli and
+# /etc/NetworkManager/NetworkManager.conf. NOTE: /etc/ssh/sshd_config is
+# NOT in the bookworm openssh-server deb anymore (postinst generates it);
+# the image ships its own copy through overlay/etc/ssh/sshd_config.
 for deb in "$TREE"/var/cache/apt/archives/*.deb; do
 	dpkg-deb --fsys-tarfile "$deb" | tar -x -C "$TREE"
 done

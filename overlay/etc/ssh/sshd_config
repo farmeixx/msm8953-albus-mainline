@@ -1,0 +1,9 @@
+# albus mainline: the image owns sshd_config outright. The bookworm
+# openssh-server deb (1:9.2p1-2+deb12u...) no longer ships /etc/ssh/sshd_config
+# (it is created by the postinst, which the unpack-only rootfs flow skips).
+Include /etc/ssh/sshd_config.d/*.conf
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+UsePAM yes
+Subsystem sftp /usr/lib/openssh/sftp-server

@@ -34,6 +34,13 @@ printf '0x02' > "$CONF/bDeviceSubClass"
 printf '0x01' > "$CONF/bDeviceProtocol"
 printf '0x0104' > "$CONF/bcdDevice"
 
+# MS OS descriptors with the RNDIS compatible id: Windows then binds the
+# net function natively (netrndis.inf) instead of running its stale
+# driver-store INF matching, which produced CM_PROB_FAILED_INSTALL churn.
+printf '0x1' > "$CONF/os_desc/use"
+printf '0xcd' > "$CONF/os_desc/b_vendor_code"
+printf 'MSFT100' > "$CONF/os_desc/qw_sign"
+
 mkdir -p "$CONF/strings/0x409"
 printf 'albus-mainline gadget' > "$CONF/strings/0x409/product"
 printf 'Motorola (msm8953-mainline)' > "$CONF/strings/0x409/manufacturer"
@@ -51,11 +58,23 @@ fi
 if [ ! -e "$CONF/configs/c.1/rndis.0" ]; then
 	ln -s "$CONF/functions/rndis.0" "$CONF/configs/c.1/rndis.0"
 fi
+# Per-interface compatible ids (visible to Windows through os_desc).
+if [ -d "$CONF/functions/rndis.0/os_desc/interface.rndis" ]; then
+	printf 'RNDIS' > "$CONF/functions/rndis.0/os_desc/interface.rndis/compatible_id"
+	printf 'RNDIS' > "$CONF/functions/rndis.0/os_desc/interface.rndis/sub_compatible_id"
+fi
+if [ ! -e "$CONF/os_desc/c.1" ]; then
+	ln -s "$CONF/configs/c.1" "$CONF/os_desc/c.1"
+fi
 if [ ! -d "$CONF/functions/ncm.0" ]; then
 	mkdir "$CONF/functions/ncm.0"
 fi
 if [ ! -e "$CONF/configs/c.1/ncm.0" ]; then
 	ln -s "$CONF/functions/ncm.0" "$CONF/configs/c.1/ncm.0"
+fi
+if [ -d "$CONF/functions/ncm.0/os_desc/interface.ncm" ]; then
+	printf 'NCM' > "$CONF/functions/ncm.0/os_desc/interface.ncm/compatible_id"
+	printf 'NCM' > "$CONF/functions/ncm.0/os_desc/interface.ncm/sub_compatible_id"
 fi
 
 UDC="$(ls /sys/class/udc 2>/dev/null | head -n1)"
