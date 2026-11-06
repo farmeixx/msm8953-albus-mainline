@@ -37,6 +37,10 @@ sudo mmdebstrap \
 # Device overlay: sshd (USB-only open root), USB RNDIS services,
 # NetworkManager policy and the albus helper scripts.
 sudo cp -a "$ROOT/distros/debian/rootfs/." "$STAGE/"
+# Windows authoring can store units with exec bits; systemd configs must be 644.
+sudo find "$STAGE/etc/systemd/system" "$STAGE/etc/ssh" "$STAGE/etc/NetworkManager" \
+  -type f ! -path '*/bin/*' -exec chmod 0644 {} +
+sudo find "$STAGE/usr/local/bin" -type f -exec chmod 0755 {} +
 # Install original device firmware as regular files; never mount vendor/modem.
 bash "$ROOT/sh/firmware.sh" install "$STAGE"
 # One shared RNDIS implementation + albus-specific configuration.
@@ -80,8 +84,15 @@ sudo mkdir -p "$STAGE/var/log/journal"
 
 #------------------------------------------------------------------#
 
-# Kernel modules (dependency cache regenerated here).
-sudo tar -xf "$KERNEL_MODULES_ARCHIVE" -C "$STAGE"
+# Kernel modules (the archive stores modules-$KREL/lib/modules/$KREL; the
+# old rootfs.sh re-wrapped it — mirror that layout handling here).
+sudo tar -xf "$KERNEL_MODULES_ARCHIVE" -C "$WORK_DIR"
+test -d "$WORK_DIR/modules-$KREL/lib/modules/$KREL" || \
+  test -d "$STAGE/lib/modules/$KREL"
+mkdir -p "$STAGE/lib/modules"
+if [ -d "$WORK_DIR/modules-$KREL/lib/modules/$KREL" ]; then
+  sudo cp -a "$WORK_DIR/modules-$KREL/lib/modules/$KREL" "$STAGE/lib/modules/"
+fi
 test -d "$STAGE/lib/modules/$KREL"
 sudo depmod -b "$STAGE" "$KREL"
 
