@@ -7,7 +7,7 @@ ROOT="$PWD"
 OUT="$ROOT/out"
 WORK="$ROOT/rootfs-work"
 IMG="$OUT/debian-albus.ext4"
-SIZE_MB=6144
+SIZE_MB=1024
 
 DEB_CODENAME=bookworm
 DEB_MIRROR=http://deb.debian.org/debian
