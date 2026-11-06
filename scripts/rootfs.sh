@@ -26,10 +26,19 @@ debootstrap --arch=arm64 --variant=minbase --foreign \
 	--include=systemd,systemd-sysv,dbus,network-manager,wpasupplicant,openssh-server,dnsmasq,iproute2,e2fsprogs,ca-certificates,wireless-regdb \
 	"$DEB_CODENAME" "$TREE" "$DEB_MIRROR"
 
+test -d "$TREE/var/cache/apt/archives"
+
 # Do NOT run debootstrap --second-stage: it executes maintainer scripts
 # (postinst) under qemu-user emulation, which is fragile (e.g. polkitd).
-# Instead, complete the system state deliberately, on the host, below.
-rm -rf "$TREE/debootstrap"
+# Foreign stage 1 only extracts the "required" set; unpack everything it
+# downloaded with the host dpkg instead (unpack only, no configure, no
+# emulation), then complete the system state deliberately on the host.
+UNPACKED_VAR="$(ls "$TREE"/var/cache/apt/archives/*.deb | wc -l)"
+test "$UNPACKED_VAR" -gt 100
+dpkg --root="$TREE" --force-all --unpack "$TREE"/var/cache/apt/archives/*.deb \
+	> "$WORK/dpkg-unpack.log" 2>&1 || { tail -n 30 "$WORK/dpkg-unpack.log"; exit 1; }
+echo "unpacked packages: $UNPACKED_VAR"
+rm -rf "$TREE/var/cache/apt/archives" "$TREE/debootstrap"
 
 # Mark every unpacked package as installed in the dpkg database. The
 # postinst side effects that this rootfs actually needs (system users,
@@ -138,6 +147,7 @@ rm -f "$TREE/etc/systemd/system/multi-user.target.wants/dnsmasq.service" \
 	  "$TREE/etc/systemd/system/sockets.target.wants/dnsmasq.socket"
 
 echo albus > "$TREE/etc/hostname"
+printf '127.0.0.1\tlocalhost\n::1\t\tlocalhost ip6-localhost ip6-loopback\n127.0.1.1\talbus\n' > "$TREE/etc/hosts"
 cp -a "$ROOT/overlay/." "$TREE/"
 chmod 755 "$TREE/usr/local/bin/albus-usb-gadget" \
 	  "$TREE/usr/local/bin/albus-resize" \
