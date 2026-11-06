@@ -1,0 +1,13 @@
+[Unit]
+Description=USB RNDIS gadget networking (Moto Z2 Play albus mainline)
+Documentation=https://gitlab.com/vanadium-oss/msm8953/moto/albus
+After=systemd-modules-load.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/albus-usb-gadget
+ExecStartPost=/usr/sbin/dnsmasq --conf-file=/run/usb-gadget/dnsmasq.conf --pid-file=/run/usb-gadget/dnsmasq.pid
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

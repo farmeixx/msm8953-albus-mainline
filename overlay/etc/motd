@@ -1,0 +1,11 @@
+Debian (bookworm) on Motorola Moto Z2 Play (albus) — msm8953 mainline
+=====================================================================
+
+ssh over the USB RNDIS gadget:   ssh root@10.15.0.1   (empty password)
+
+Wi-Fi:
+        nmcli device wifi list
+        nmcli device wifi connect "SSID" password "passphrase"
+
+Debug:  albus-debug >>= saves /var/log/albus-debug-*.txt
+        /sys/fs/pstore (previous boot console), dmesg(1)

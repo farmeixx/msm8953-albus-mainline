@@ -1,0 +1,45 @@
+name: Build albus (msm8953) mainline kernel + Debian rootfs
+
+on:
+  push:
+    branches: [mainline]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update -yqq
+          sudo apt-get install -yqq bc bison flex gcc-aarch64-linux-gnu git gzip libssl-dev make python3 debootstrap qemu-user-static e2fsprogs kmod
+
+      - name: Build kernel, dtbs, modules and boot.img
+        run: ./scripts/kernel.sh
+
+      - name: Build Debian rootfs image (debian-albus.ext4)
+        run: ./scripts/rootfs.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: albus-mainline
+          if-no-files-found: error
+          path: |
+            out/boot.img
+            out/boot.img.sha256
+            out/Image.gz
+            out/msm8953-motorola-albus.dtb
+            out/modules.tar.gz
+            out/kernel-release.txt
+            out/debian-albus.ext4.gz
+            out/debian-albus.ext4.gz.sha256

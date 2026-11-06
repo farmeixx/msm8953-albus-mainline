@@ -1,0 +1,13 @@
+[Unit]
+Description=Grow the albus root filesystem to fill userdata
+ConditionPathExists=!/var/lib/.albus-resized
+After=local-fs.target
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/albus-resize
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
