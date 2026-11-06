@@ -1,0 +1,11 @@
+[Unit]
+Description=Grow the Moto Z2 Play (albus) root filesystem to fill its partition
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/albus-resize
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

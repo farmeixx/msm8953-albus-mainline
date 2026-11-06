@@ -1,0 +1,43 @@
+#!/bin/sh
+# Dump the mainline bring-up state of the Moto Z2 Play (albus), screen-less.
+# Output goes to stdout and to /var/log/albus-debug-*.txt.
+{
+	echo "== uname / cmdline"
+	uname -a
+	cat /proc/cmdline
+
+	echo "== partitions"
+	cat /proc/partitions
+	ls /dev/mmcblk* 2>/dev/null
+
+	echo "== usb-gadget / udc"
+	for g in /sys/kernel/config/usb_gadget/*/; do
+		[ -d "$g" ] || continue
+		echo "gadget $g: UDC=$(cat "$g/UDC" 2>/dev/null || echo unbound)"
+	done
+	ls /sys/class/udc/ 2>/dev/null
+	ip -br addr 2>/dev/null
+
+	echo "== regulators"
+	for r in /sys/class/regulator/*; do
+		[ -f "$r/name" ] && echo "$r: name=$(cat "$r/name") state=$(cat "$r/state" 2>/dev/null)"
+	done
+
+	echo "== remoteproc"
+	for r in /sys/class/remoteproc/*; do
+		[ -f "$r/name" ] && echo "$r: $(cat "$r/name") state=$(cat "$r/state" 2>/dev/null)"
+	done
+
+	echo "== dmesg (hardware keywords)"
+	dmesg | grep -iE "dwc3|qcom|wcnss|wlan|wcn36|sdhc|mmc0|mmc1|mdss|pm8953|pmi8950|remoteproc|smbcharger|iris|zap|msm-ssps|cpr|gpio-keys" | tail -n 200
+
+	echo "== pstore"
+	ls -la /sys/fs/pstore/ 2>/dev/null
+
+	echo "== wifi (NetworkManager)"
+	nmcli device status 2>/dev/null
+	nmcli device wifi list 2>/dev/null | head -n 15
+
+	echo "== last 80 dmesg lines"
+	dmesg | tail -n 80
+} | tee "/var/log/albus-debug-$(date +%Y%m%d-%H%M%S).txt"

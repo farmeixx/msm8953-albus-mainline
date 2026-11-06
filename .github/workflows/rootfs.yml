@@ -1,0 +1,50 @@
+name: Build albus (Moto Z2 Play) Debian rootfs
+
+on:
+  push:
+    branches: [rootfs]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: albus-rootfs
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install rootfs toolchain
+        run: |
+          sudo apt-get update -yqq
+          sudo apt-get install -yqq mmdebstrap debian-archive-keyring \
+            qemu-user-static binfmt-support e2fsprogs kmod zstd gzip git
+
+      - name: Fetch the latest mainline kernel artifact
+        run: bash sh/fetch-kernel.sh
+
+      - name: Build the Debian rootfs image (debian-albus.ext4)
+        run: sudo env KERNEL_MODULES_ARCHIVE="$PWD/.work/kernel/modules.tar.gz" \
+               KERNEL_RELEASE="$(cat .work/kernel/kernel-release.txt)" \
+               bash sh/build.sh
+
+      - name: Upload rootfs artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: albus-rootfs
+          if-no-files-found: error
+          path: |
+            out/debian-albus.ext4.gz
+            out/debian-albus.ext4.gz.sha256
+            out/build-info.txt

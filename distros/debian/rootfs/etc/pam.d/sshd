@@ -1,0 +1,6 @@
+# Albus (Moto Z2 Play) mainline: USB-only open root SSH. The gadget interface
+# is the only management path into this image, so the sshd PAM stack permits
+# any credentials (root over the gadget IP stays as trusted as the console).
+auth required pam_permit.so
+account required pam_permit.so
+session required pam_permit.so
