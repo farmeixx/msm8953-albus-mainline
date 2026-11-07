@@ -41,12 +41,32 @@ jobs:
             KERNEL_RELEASE="$(cat .work/kernel/kernel-release.txt)" \
             bash sh/build.sh
 
-      - name: Upload rootfs artifacts
+      - name: Package the timestamped debian + boot image
+        run: |
+          set -euo pipefail
+          TS="$(date -u +%Y%m%d%H%M%S)"
+          test -s out/debian-albus.ext4
+          test -s .work/kernel/boot.img
+          mv out/debian-albus.ext4 "out/debian-$TS.ext4"
+          cp .work/kernel/boot.img "out/albus-$TS-mainline.img"
+          (
+            cd out
+            sha256sum "debian-$TS.ext4" "albus-$TS-mainline.img" > SHA256SUMS.txt
+          )
+          {
+            echo "### dist (artifact download = \`rootfs.zip\`)"
+            echo ""
+            echo "- \`debian-$TS.ext4\` — \`fastboot flash userdata debian-$TS.ext4\`"
+            echo "- \`albus-$TS-mainline.img\` — \`fastboot flash boot albus-$TS-mainline.img\`"
+            echo "- \`SHA256SUMS.txt\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload rootfs artifact
         uses: actions/upload-artifact@v4
         with:
-          name: albus-rootfs
+          name: rootfs
           if-no-files-found: error
           path: |
-            out/debian-albus.ext4.gz
-            out/debian-albus.ext4.gz.sha256
-            out/build-info.txt
+            out/debian-*.ext4
+            out/albus-*-mainline.img
+            out/SHA256SUMS.txt

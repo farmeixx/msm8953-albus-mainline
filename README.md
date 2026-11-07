@@ -9,14 +9,19 @@ kernel artifact from the `mainline` branch.
 | branch | what it builds | artifact |
 |---|---|---|
 | `mainline` | kernel + DTB + modules + `boot.img` | `albus-mainline` |
-| `rootfs` (this) | Debian rootfs image from the latest kernel artifact | `albus-rootfs` |
+| `rootfs` (this) | Debian rootfs + kernel boot image (timestamped) | `rootfs` |
 
-## Artifacts (Actions run → `albus-rootfs`)
+## Artifacts (Actions run → download = `rootfs.zip`)
 
 | file | use |
 |---|---|
-| `debian-albus.ext4.gz` (+ `.sha256`) | `gzip -d`, then `fastboot flash userdata` |
-| `build-info.txt` | image metadata (suite, UUID, free space, USB identity) |
+| `debian-<TS>.ext4` | `fastboot flash userdata debian-<TS>.ext4` |
+| `albus-<TS>-mainline.img` | the kernel `boot.img` — `fastboot flash boot albus-<TS>-mainline.img` |
+| `SHA256SUMS.txt` | sha256 of both images |
+
+`<TS>` = build timestamp `YYYYMMDDHHMMSS` (UTC) stamped when the artifact is
+published; the boot image always comes from the same `mainline` artifact as
+the modules inside the ext4.
 
 ## What ships in the image
 
@@ -40,8 +45,9 @@ kernel artifact from the `mainline` branch.
 `sh/fetch-kernel.sh` → latest successful `mainline.yml` run artifact;
 `sh/build.sh` → mmdebstrap bookworm arm64, device overlay + firmware +
 usb-gadget, `systemctl --root` enablement, chroot `sshd -t` sanity check,
-mkfs.ext4 with `-d` staging (`-m 0 -N 32768`), e2fsck, free-space gate,
-`debian-albus.ext4.gz` + sha256 + `build-info.txt`.
+mkfs.ext4 with `-d` staging (`-m 0 -N 32768`), e2fsck, free-space gate;
+the workflow stamps `debian-<TS>.ext4` + `albus-<TS>-mainline.img` +
+`SHA256SUMS.txt` when publishing the `rootfs` artifact.
 
 ## Layout (branch `rootfs`)
 

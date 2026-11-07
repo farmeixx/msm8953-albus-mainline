@@ -165,8 +165,9 @@ if [ "$FREE_MB" -lt "$MIN_FREE_MB" ]; then
   echo "ERROR: rootfs cannot safely fit in ${IMAGE_MB} MiB; only ${FREE_MB} MiB free (requires ${MIN_FREE_MB})." >&2
   exit 1
 fi
-gzip -6 -c "$ROOTFS_IMG" > "$OUT_DIR/debian-albus.ext4.gz"
-rm -f "$ROOTFS_IMG"
+# The image stays uncompressed: the workflow renames it with a build
+# timestamp (debian-<TS>.ext4) when the artifact is published, and the
+# downloaded artifact is already a zip — flashing needs no gzip step.
 
 {
   echo "device=$DEVICE"
@@ -193,5 +194,5 @@ rm -f "$ROOTFS_IMG"
 
 (
   cd "$OUT_DIR"
-  sha256sum debian-albus.ext4.gz build-info.txt > debian-albus.ext4.gz.sha256
+  sha256sum debian-albus.ext4 build-info.txt > debian-albus.ext4.sha256
 )
