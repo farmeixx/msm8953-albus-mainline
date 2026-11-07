@@ -77,4 +77,7 @@ on first boot.
 - `mkbootimg.py` — Android boot image writer (vendored)
 - `conf/mainline.conf` — device build configuration (documents exactly what
   the branch builds)
-- `.github/workflows/mainline.yml` — CI: cache-keyed kernel build + artifact
+- `.github/workflows/mainline.yml` — CI: kernel rebuild on every run backed
+  by a rolling ccache (~10 min warm), artifact upload; dispatchable
+- `.github/workflows/rootfs.yml` — mirror copy so the Debian workflow shows
+  up in the Actions list (dispatch it on the `rootfs` branch)

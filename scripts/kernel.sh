@@ -18,6 +18,20 @@ test -s arch/arm64/boot/dts/qcom/msm8953-motorola-albus.dts
 test -s arch/arm64/configs/msm8953.config
 test -s arch/arm64/configs/motorola-albus.config
 
+# ccache over the cross toolchain: CCACHE_DIR lives in the workspace and the
+# workflow restores it between runs; without ccache this is a plain build.
+export CCACHE_DIR="$ROOT/.ccache"
+if command -v ccache >/dev/null 2>&1; then
+	CCACHE_BIN="$ROOT/.ccache-bin"
+	mkdir -p "$CCACHE_BIN"
+	ln -sf "$(command -v ccache)" "$CCACHE_BIN/aarch64-linux-gnu-gcc"
+	export PATH="$CCACHE_BIN:$PATH"
+	ccache -M 5G >/dev/null 2>&1
+	echo "ccache: on ($(ccache -s 2>/dev/null | awk '/^cache size/{print $2, $3}'))"
+else
+	echo "ccache: not present, plain build"
+fi
+
 make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- defconfig
 scripts/kconfig/merge_config.sh -m .config \
 	arch/arm64/configs/msm8953.config \
@@ -64,3 +78,4 @@ python3 "$ROOT/mkbootimg.py" \
 	--output "$OUT/boot.img"
 
 sha256sum "$OUT/boot.img" > "$OUT/boot.img.sha256"
+ccache -s 2>/dev/null | head -14 || true

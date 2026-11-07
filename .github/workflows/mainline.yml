@@ -4,11 +4,6 @@ on:
   push:
     branches: [mainline]
   workflow_dispatch:
-    inputs:
-      force_kernel:
-        description: 'Force kernel rebuild even if cached'
-        default: false
-        type: boolean
 
 permissions:
   contents: read
@@ -27,29 +22,37 @@ jobs:
         with:
           fetch-depth: 1
 
-      # Kernel build chain: scripts/kernel.sh -> out/
-      # (Image.gz, DTB, modules.tar.gz, boot.img). Persist out/ keyed on the
-      # kernel inputs (kernel.sh + conf, which pin the source and the build
-      # contract); a rebuild only happens when those inputs change or
-      # force_kernel is set. -v2 follows the switch to the committed device
-      # files (one cold rebuild expected).
-      - name: Restore cached kernel build
-        id: kcache
-        uses: actions/cache@v4
+      # The kernel is rebuilt on every run; the compiler cache keeps that
+      # cheap (~30 min once, ~10 min warm). Rolling key: each run saves the
+      # updated .ccache under its own run number and the next run restores
+      # the most recent one by prefix.
+      - name: Restore ccache
+        uses: actions/cache/restore@v4
         with:
-          path: out/
-          key: albus-kernel-${{ hashFiles('scripts/kernel.sh', 'conf/mainline.conf') }}-v2
+          path: .ccache/
+          key: albus-ccache-${{ github.run_number }}
+          restore-keys: |
+            albus-ccache-
 
       - name: Install toolchain
         run: |
           sudo apt-get update -yqq
-          sudo apt-get install -yqq bc bison flex gcc-aarch64-linux-gnu git gzip libssl-dev make python3
+          sudo apt-get install -yqq bc bison ccache flex gcc-aarch64-linux-gnu git gzip libssl-dev make python3
 
       - name: Build kernel, dtbs, modules and boot.img
-        if: steps.kcache.outputs.cache-hit != 'true' || inputs.force_kernel == true
-        run: ./scripts/kernel.sh
+        run: |
+          test -e scripts/kernel.sh || {
+            echo "Run this workflow on the 'mainline' branch (it carries scripts/ and conf/)."; exit 1
+          }
+          ./scripts/kernel.sh
 
-      - name: Verify kernel artifacts present (cached or built)
+      - name: Save ccache
+        uses: actions/cache/save@v4
+        with:
+          path: .ccache/
+          key: albus-ccache-${{ github.run_number }}
+
+      - name: Verify kernel artifacts present
         run: |
           test -s out/boot.img
           test -s out/Image.gz
