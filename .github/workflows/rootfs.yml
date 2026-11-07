@@ -1,8 +1,6 @@
 name: Build albus (Moto Z2 Play) Debian rootfs
 
 on:
-  push:
-    branches: [rootfs]
   workflow_dispatch:
 
 permissions:
