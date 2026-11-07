@@ -1,0 +1,69 @@
+name: Build albus (Moto Z2 Play) lk2nd
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: albus-lk2nd
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Branch sanity
+        run: |
+          test -e lk2nd/msm8953-motorola-albus.dts || {
+            echo "Run this workflow on the 'lk2nd' branch (it carries lk2nd/)."; exit 1
+          }
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update -yqq
+          sudo apt-get install -yqq git make python3 \
+            gcc-arm-none-eabi device-tree-compiler libfdt-dev
+
+      - name: Clone lk2nd (playday3008 fork @ sanders-fix commit)
+        run: |
+          git clone https://github.com/playday3008/lk2nd.git lk2nd-src
+          git -C lk2nd-src checkout d2d0b98cc10d82dc7db8495ae17b55d8bd961546
+
+      - name: Add albus device support
+        run: |
+          cp lk2nd/msm8953-motorola-albus.dts \
+            lk2nd-src/lk2nd/device/dts/msm8953/msm8953-motorola-albus.dts
+          python3 lk2nd/patch_rules.py
+
+      - name: Build lk2nd for msm8953
+        run: |
+          cd lk2nd-src
+          make TOOLCHAIN_PREFIX=arm-none-eabi- lk2nd-msm8953
+          test -s build-lk2nd-msm8953/lk2nd.img
+
+      - name: Upload lk2nd artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lk2nd-albus
+          if-no-files-found: error
+          path: |
+            lk2nd-src/build-lk2nd-msm8953/lk2nd.img
+
+      - name: Build summary
+        run: |
+          {
+            echo "### lk2nd for Moto Z2 Play (albus)"
+            echo ""
+            echo "- Flash: fastboot flash boot lk2nd.img"
+            echo "- Vol-Down no boot = menu fastboot do lk2nd"
+            echo "- O kernel mainline (boot.img) passa a ser flasheado pelo menu do lk2nd"
+            echo "  (fastboot flash boot boot.img) - o lk2nd aplica offset de 512 KiB."
+          } >> "$GITHUB_STEP_SUMMARY"

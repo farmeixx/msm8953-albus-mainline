@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+#include "msm8953-motorola.dtsi"
+
+/ {
+	model = "albus"; /* bootloader refuses the dtb without this model value. */
+	qcom,board-id = <0x48 0x8000>,
+			<0x48 0x81A0>,
+			<0x48 0x81A1>,
+			<0x49 0x81B0>,
+			<0x49 0x8200>,
+			<0x4A 0x8300>,
+			<0x4A 0x8400>;
+};
+
+&lk2nd {
+	model = "Motorola Moto Z2 Play (albus)";
+	compatible = "motorola,albus";
+
+	lk2nd,dtb-files = "msm8953-motorola-albus";
+};
