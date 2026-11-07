@@ -14,7 +14,7 @@ GitHub Actions.
 | branch | what it builds | artifact |
 |---|---|---|
 | `mainline` (this) | kernel + DTB + modules + `boot.img` | `albus-mainline` |
-| `rootfs` | Debian rootfs image from the latest `mainline` artifact | `albus-rootfs` |
+| `rootfs` | Debian rootfs + kernel boot image (timestamped) | `rootfs` |
 
 ## Artifacts (Actions run → `albus-mainline`)
 
@@ -39,10 +39,9 @@ GitHub Actions.
 ## Flashing (needs an unlocked bootloader running **lk2nd ≥ 23**)
 
 ```sh
-gzip -d debian-albus.ext4.gz   # from the `rootfs` branch artifact
-
-fastboot flash boot boot.img
-fastboot flash userdata debian-albus.ext4
+# from the `rootfs` branch artifact (rootfs.zip), TS = YYYYMMDDHHMMSS
+fastboot flash boot albus-<TS>-mainline.img
+fastboot flash userdata debian-<TS>.ext4
 fastboot reboot
 ```
 
