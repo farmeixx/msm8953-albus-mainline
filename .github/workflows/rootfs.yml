@@ -51,14 +51,13 @@ jobs:
         run: |
           set -euo pipefail
           TS="$(date -u +%Y%m%d%H%M%S)"
-          test -s out/debian-albus.ext4
-          test -s .work/kernel/boot.img
-          mv out/debian-albus.ext4 "out/debian-$TS.ext4"
-          cp .work/kernel/boot.img "out/albus-$TS-mainline.img"
-          (
-            cd out
-            sha256sum "debian-$TS.ext4" "albus-$TS-mainline.img" > SHA256SUMS.txt
-          )
+          sudo test -s out/debian-albus.ext4
+          sudo mv out/debian-albus.ext4 "out/debian-$TS.ext4"
+          sudo cp .work/kernel/boot.img "out/albus-$TS-mainline.img"
+          sudo sh -c "cd out && sha256sum 'debian-$TS.ext4' 'albus-$TS-mainline.img' > SHA256SUMS.txt"
+          # build.sh runs under sudo (mkfs needs root), so out/ and the image
+          # are root-owned; hand them back to the runner for the upload step.
+          sudo chown -R "$(id -u):$(id -g)" out
           {
             echo "### dist (artifact download = \`rootfs.zip\`)"
             echo ""
