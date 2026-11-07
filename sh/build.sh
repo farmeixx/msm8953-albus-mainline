@@ -50,6 +50,10 @@ sudo install -D -m 0755 "$ROOT/sh/usb-gadget" "$STAGE/usr/local/sbin/usb-gadget"
 sudo install -m 0644 "$ROOT/conf/usb.conf" "$STAGE/etc/usb-gadget.conf"
 test -x "$STAGE/usr/local/sbin/usb-gadget"
 test -s "$STAGE/etc/usb-gadget.conf"
+# Manual USB role switch helper: host mode releases the configfs gadget,
+# device mode brings it back (no reboot involved).
+sudo install -m 0755 "$ROOT/sh/usb-role" "$STAGE/usr/local/bin/usb-role"
+test -x "$STAGE/usr/local/bin/usb-role"
 
 printf '%s\n' "$DEVICE" | sudo tee "$STAGE/etc/hostname" >/dev/null
 sudo tee "$STAGE/etc/hosts" >/dev/null <<HOSTS

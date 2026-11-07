@@ -1,0 +1,28 @@
+#!/bin/sh
+# USB role switch helper for the albus USB Type-C port. There is no typec
+# controller driver on mainline, so the DWC3 role is switched by hand:
+# /sys/class/usb_role/<switch>/role accepts host / device / none.
+# In host mode the configfs gadget has to be torn down first: it is bound
+# to the UDC and would keep the controller in device mode.
+set -eu
+
+ROLE="$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')"
+case "$ROLE" in
+	host | device) ;;
+	*) echo "usage: usb-role [host|device]" >&2; exit 2 ;;
+esac
+
+SWITCH="$(find /sys/class/usb_role -name role -print -quit 2>/dev/null)"
+[ -n "$SWITCH" ] || { echo 'no usb role switch found' >&2; exit 1; }
+
+if [ "$ROLE" = host ]; then
+	systemctl stop usb-gadget.service usb-dhcp.service 2>/dev/null || true
+fi
+
+echo "$ROLE" > "$SWITCH"
+
+if [ "$ROLE" = device ]; then
+	systemctl start usb-gadget.service usb-dhcp.service
+fi
+
+echo "usb role: $ROLE"
