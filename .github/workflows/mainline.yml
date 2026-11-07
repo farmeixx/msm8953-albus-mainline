@@ -1,0 +1,81 @@
+name: Build albus (Moto Z2 Play) mainline kernel
+
+on:
+  push:
+    branches: [mainline]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: albus-mainline-kernel
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      # The kernel is rebuilt on every run; the compiler cache keeps that
+      # cheap (~30 min once, ~10 min warm). Rolling key: each run saves the
+      # updated .ccache under its own run number and the next run restores
+      # the most recent one by prefix.
+      - name: Restore ccache
+        uses: actions/cache/restore@v4
+        with:
+          path: .ccache/
+          key: albus-ccache-${{ github.run_number }}
+          restore-keys: |
+            albus-ccache-
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update -yqq
+          sudo apt-get install -yqq bc bison ccache flex gcc-aarch64-linux-gnu git gzip libssl-dev make python3
+
+      - name: Build kernel, dtbs, modules and boot.img
+        run: |
+          test -e scripts/kernel.sh || {
+            echo "Run this workflow on the 'mainline' branch (it carries scripts/ and conf/)."; exit 1
+          }
+          ./scripts/kernel.sh
+
+      - name: Save ccache
+        uses: actions/cache/save@v4
+        with:
+          path: .ccache/
+          key: albus-ccache-${{ github.run_number }}
+
+      - name: Verify kernel artifacts present
+        run: |
+          test -s out/boot.img
+          test -s out/Image.gz
+          test -s out/msm8953-motorola-albus.dtb
+          test -s out/modules.tar.gz
+          test -s out/kernel-release.txt
+
+      - name: Upload kernel artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: albus-mainline
+          if-no-files-found: error
+          path: |
+            out/boot.img
+            out/boot.img.sha256
+            out/Image.gz
+            out/msm8953-motorola-albus.dtb
+            out/modules.tar.gz
+            out/kernel-release.txt
+
+      - name: Build summary
+        run: |
+          {
+            echo "kernel_release=$(cat out/kernel-release.txt)"
+            echo "boot_img_sha256=$(cut -d' ' -f1 out/boot.img.sha256)"
+          } >> "$GITHUB_STEP_SUMMARY"

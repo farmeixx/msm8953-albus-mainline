@@ -59,4 +59,7 @@ the workflow stamps `debian-<TS>.ext4` + `albus-<TS>-mainline.img` +
 - `sh/firmware.sh` — generic firmware importer
 - `distros/debian/rootfs/` — the device overlay (services, sshd policy,
   NetworkManager policy, albus helpers)
-- `.github/workflows/rootfs.yml` — CI
+- `.github/workflows/rootfs.yml` — CI (dispatchable; the default branch is
+  `mainline`, so this workflow mirrors there too — when dispatching, pick
+  the `rootfs` branch)
+- `.github/workflows/mainline.yml` — mirror copy of the kernel workflow

@@ -25,6 +25,12 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Branch sanity
+        run: |
+          test -e sh/build.sh || {
+            echo "Run this workflow on the 'rootfs' branch (it carries sh/ and conf/)."; exit 1
+          }
+
       - name: Install rootfs toolchain
         run: |
           sudo apt-get update -yqq
