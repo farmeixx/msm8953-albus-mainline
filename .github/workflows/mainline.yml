@@ -29,14 +29,16 @@ jobs:
 
       # Kernel build chain: scripts/kernel.sh -> out/
       # (Image.gz, DTB, modules.tar.gz, boot.img). Persist out/ keyed on the
-      # kernel inputs (patches + kernel.sh, which pins the base commit); a
-      # rebuild only happens when those inputs change or force_kernel is set.
+      # kernel inputs (kernel.sh + conf, which pin the source and the build
+      # contract); a rebuild only happens when those inputs change or
+      # force_kernel is set. -v2 follows the switch to the committed device
+      # files (one cold rebuild expected).
       - name: Restore cached kernel build
         id: kcache
         uses: actions/cache@v4
         with:
           path: out/
-          key: albus-kernel-${{ hashFiles('patches/**', 'scripts/kernel.sh') }}-v1
+          key: albus-kernel-${{ hashFiles('scripts/kernel.sh', 'conf/mainline.conf') }}-v2
 
       - name: Install toolchain
         run: |

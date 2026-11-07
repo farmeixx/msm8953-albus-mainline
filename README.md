@@ -3,9 +3,9 @@
 Mainline Linux for the **Motorola Moto Z2 Play (albus, MSM8953)**, built in
 GitHub Actions.
 
-**Builder only — patches are authored against
+**Builder only — the device DTS and config fragment are committed directly in
 [vanadium-oss/msm8953/Mainline/linux](https://gitlab.com/vanadium-oss/msm8953/Mainline/linux)
-(`msm8953/latest`).** Device firmware lives at
+(branch `msm8953/latest`, one-line commits).** Device firmware lives at
 [albus-firmware](https://gitlab.com/vanadium-oss/msm8953/moto/albus/Mainline/albus-firmware)
 (GitLab) and is installed by the `rootfs` branch.
 
@@ -27,7 +27,8 @@ GitHub Actions.
 
 ## Build contract
 
-- clone `msm8953/latest`, apply `patches/*.patch`
+- clone `msm8953/latest` — the albus DTS and `motorola-albus.config` are
+  committed in the kernel repo itself (no local patches)
 - `defconfig` → merge `msm8953.config` + `motorola-albus.config` → `olddefconfig`
 - essentials asserted built-in: ext4(+security), configfs gadget RNDIS/NCM/ECM, DWC3 QCOM, gpio-keys
 - `Image.gz dtbs modules` + `modules_install`
@@ -71,11 +72,9 @@ on first boot.
 
 ## Layout (branch `mainline`)
 
-- `patches/` — kernel patches (DTS + config fragment) applied to a fresh
-  `msm8953/latest` clone
-- `patches-src/` — author-round copies of the DTS + config fragment
-- `scripts/kernel.sh` — clone, patch, defconfig+fragments, `Image.gz dtbs
-  modules`, `modules_install`, `boot.img`
+- `scripts/kernel.sh` — clone (no patches: the device files are committed in
+  the kernel repo), defconfig + fragments, `Image.gz dtbs modules`,
+  `modules_install`, `boot.img`
 - `mkbootimg.py` — Android boot image writer (vendored)
 - `conf/mainline.conf` — device build configuration (documents exactly what
   the branch builds)

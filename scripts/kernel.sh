@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Build the msm8953 mainline kernel with the albus patches and pack boot.img.
+# Build the msm8953 mainline kernel (the albus DTS and config fragment are
+# committed in the same repository) and pack boot.img.
 set -euxo pipefail
 
 ROOT="$PWD"
@@ -13,12 +14,7 @@ git clone --depth 1 --branch msm8953/latest \
 	https://gitlab.com/vanadium-oss/msm8953/Mainline/linux.git "$SRC"
 cd "$SRC"
 
-for patch in "$ROOT"/patches/*.patch; do
-	echo "== applying $(basename "$patch")"
-	git apply --check "$patch"
-	git apply "$patch"
-done
-
+test -s arch/arm64/boot/dts/qcom/msm8953-motorola-albus.dts
 test -s arch/arm64/configs/msm8953.config
 test -s arch/arm64/configs/motorola-albus.config
 
