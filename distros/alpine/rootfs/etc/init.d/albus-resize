@@ -1,0 +1,10 @@
+#!/sbin/openrc-run
+
+description="Grow the Moto Z2 Play (albus) root filesystem to fill its partition"
+
+command="/usr/local/bin/albus-resize"
+
+depend() {
+    need localmount
+    after modules hwdrivers udev
+}

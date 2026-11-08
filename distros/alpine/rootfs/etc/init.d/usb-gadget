@@ -1,0 +1,20 @@
+#!/sbin/openrc-run
+
+description="Moto Z2 Play (albus) USB RNDIS gadget for headless SSH"
+
+command="/usr/local/sbin/usb-gadget"
+
+depend() {
+    need localmount
+    after modules hwdrivers
+    before dnsmasq usb-sshd networkmanager
+}
+
+start_pre() {
+    # configfs backs the gadget; the Debian image relies on systemd's
+    # sys-kernel-config.mount, so OpenRC mounts it here when missing.
+    modprobe configfs 2>/dev/null || true
+    if [ -d /sys/kernel/config ] && ! grep -qs configfs /proc/mounts; then
+        mount -t configfs configfs /sys/kernel/config
+    fi
+}
