@@ -1,0 +1,75 @@
+name: Build albus (Moto Z2 Play) Alpine rootfs
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: albus-rootfs-alpine
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Branch sanity
+        run: |
+          test -e sh/build-alpine.sh || {
+            echo "Run this workflow on the 'rootfs' branch (it carries sh/ and conf/)."; exit 1
+          }
+
+      - name: Install rootfs toolchain
+        run: |
+          sudo apt-get update -yqq
+          sudo apt-get install -yqq qemu-user-static binfmt-support \
+            e2fsprogs kmod zstd gzip curl git
+
+      - name: Fetch the latest mainline kernel artifact
+        run: bash sh/fetch-kernel.sh
+
+      - name: Build the Alpine rootfs image (alpine-albus.ext4)
+        run: |
+          sudo env OUT_DIR="$PWD/out" \
+            KERNEL_MODULES_ARCHIVE="$PWD/.work/kernel/modules.tar.gz" \
+            KERNEL_RELEASE="$(cat .work/kernel/kernel-release.txt)" \
+            bash sh/build-alpine.sh
+
+      - name: Package the timestamped alpine + boot image
+        run: |
+          set -euo pipefail
+          TS="$(date -u +%Y%m%d%H%M%S)"
+          sudo test -s out/alpine-albus.ext4
+          sudo mv out/alpine-albus.ext4 "out/alpine-$TS.ext4"
+          sudo cp .work/kernel/boot.img "out/albus-$TS-mainline.img"
+          sudo sh -c "cd out && sha256sum 'alpine-$TS.ext4' 'albus-$TS-mainline.img' > SHA256SUMS.txt"
+          # build-alpine.sh runs under sudo (mkfs needs root), so out/ and the
+          # image are root-owned; hand them back to the runner for the upload.
+          sudo chown -R "$(id -u):$(id -g)" out
+          {
+            echo "### dist (artifact download = \`rootfs-alpine.zip\`)"
+            echo ""
+            echo "- \`alpine-$TS.ext4\` — \`fastboot flash userdata alpine-$TS.ext4\`"
+            echo "- \`albus-$TS-mainline.img\` — \`fastboot flash boot albus-$TS-mainline.img\`"
+            echo "- \`SHA256SUMS.txt\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload rootfs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rootfs-alpine
+          if-no-files-found: error
+          path: |
+            out/alpine-*.ext4
+            out/albus-*-mainline.img
+            out/SHA256SUMS.txt
