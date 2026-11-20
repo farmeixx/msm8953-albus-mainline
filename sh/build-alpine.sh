@@ -9,7 +9,7 @@ set -euo pipefail
 : "${OUT_DIR:?set OUT_DIR}"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-source "$ROOT/conf/rootfs.conf"
+source "$ROOT/conf/alpine.conf"
 source "$ROOT/conf/device.conf"
 
 WORK_DIR="${WORK_DIR:-$ROOT/.work}"

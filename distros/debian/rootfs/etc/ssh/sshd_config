@@ -1,6 +1,0 @@
-# Albus (Moto Z2 Play) mainline: the Debian openssh-server deb does not ship
-# /etc/ssh/sshd_config, so the image provides the distro-default shape itself:
-# drop-ins (10-usb-ssh.conf) drive the USB-only policy, host keys are picked
-# up by their stock names in /etc/ssh (key generation matches channel-rootfs).
-Include /etc/ssh/sshd_config.d/*.conf
-Subsystem sftp /usr/lib/openssh/sftp-server
