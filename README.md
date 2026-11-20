@@ -1,6 +1,6 @@
 # msm8953-albus-mainline · branch `rootfs`
 
-Debian (bookworm, arm64) rootfs image for the **Motorola Moto Z2 Play**
+Debian (stable, arm64; codename resolved at build time) rootfs image for the **Motorola Moto Z2 Play**
 (albus, MSM8953), built in GitHub Actions on top of the latest successful
 kernel artifact from the `mainline` branch.
 
@@ -43,7 +43,7 @@ the modules inside the ext4.
 ## Build contract
 
 `sh/fetch-kernel.sh` → latest successful `mainline.yml` run artifact;
-`sh/build.sh` → mmdebstrap bookworm arm64, device overlay + firmware +
+`sh/build.sh` → mmdebstrap stable arm64 (codename resolved at build time), device overlay + firmware +
 usb-gadget, `systemctl --root` enablement, chroot `sshd -t` sanity check,
 mkfs.ext4 with `-d` staging (`-m 0 -N 32768`), e2fsck, free-space gate;
 the workflow stamps `debian-<TS>.ext4` + `albus-<TS>-mainline.img` +

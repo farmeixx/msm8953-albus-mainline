@@ -13,6 +13,15 @@ source "$ROOT/conf/rootfs.conf"
 source "$ROOT/conf/device.conf"
 
 DEBIAN_SUITE="${DEBIAN_SUITE:?}"
+# "stable" tracks the current Debian release; resolve it to the codename so
+# the image's apt sources stay pinned to what was built.
+if [ "$DEBIAN_SUITE" = "stable" ]; then
+  DEBIAN_SUITE="$(
+    curl -fsSL "$DEB_MIRROR/dists/stable/Release" \
+      | awk '/^Codename:/ { v=$2 } END { print v }'
+  )"
+fi
+: "${DEBIAN_SUITE:?could not resolve Debian stable codename}"
 WORK_DIR="${WORK_DIR:-$ROOT/.work}"
 STAGE="$WORK_DIR/rootfs"
 KREL="$KERNEL_RELEASE"

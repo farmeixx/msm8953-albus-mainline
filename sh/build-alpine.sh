@@ -20,7 +20,6 @@ ALPINE_VERSION="${ALPINE_VERSION:?}"
 ALPINE_BRANCH="v${ALPINE_VERSION%.*}"
 ALPINE_MIRROR="${ALPINE_MIRROR:-https://dl-cdn.alpinelinux.org/alpine}"
 ALPINE_ARCH="aarch64"
-APK_TOOLS_STATIC_VERSION="${APK_TOOLS_STATIC_VERSION:?}"
 
 MINIROOTFS="alpine-minirootfs-${ALPINE_VERSION}-${ALPINE_ARCH}.tar.gz"
 MINIROOTFS_URL="${ALPINE_MIRROR}/${ALPINE_BRANCH}/releases/${ALPINE_ARCH}/${MINIROOTFS}"
@@ -52,6 +51,20 @@ EOF
 # so replace it with a plain copy of the runner's resolver.
 sudo rm -f "$STAGE/etc/resolv.conf"
 sudo cp /etc/resolv.conf "$STAGE/etc/resolv.conf"
+
+# Resolve the newest apk-tools-static published for this Alpine branch; old
+# revisions are pruned from the stable repositories.
+APKINDEX_TGZ="$WORK_DIR/APKINDEX.tar.gz"
+curl -fsSL --retry 3 "$ALPINE_MIRROR/$ALPINE_BRANCH/main/x86_64/APKINDEX.tar.gz" \
+  -o "$APKINDEX_TGZ"
+APK_TOOLS_STATIC_VERSION="$(
+  tar -xzOf "$APKINDEX_TGZ" APKINDEX | awk -F: '
+    /^P:apk-tools-static$/ { p=1; next }
+    p && /^V:/ { v=$2; p=0 }
+    END { print v }
+  '
+)"
+: "${APK_TOOLS_STATIC_VERSION:?could not resolve apk-tools-static}"
 
 APK_STATIC_PKG="$WORK_DIR/apk-tools-static-$APK_TOOLS_STATIC_VERSION.apk"
 APK_STATIC_DIR="$WORK_DIR/apk-static"
