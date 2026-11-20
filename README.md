@@ -7,14 +7,18 @@ GitHub Actions.
 [vanadium-oss/msm8953/Mainline/linux](https://gitlab.com/vanadium-oss/msm8953/Mainline/linux)
 (branch `msm8953/latest`, one-line commits).** Device firmware lives at
 [albus-firmware](https://gitlab.com/vanadium-oss/msm8953/moto/albus/Mainline/albus-firmware)
-(GitLab) and is installed by the `rootfs` branch.
+(GitLab) and is installed by the `debian` and `alpine` branches.
 
 ## Branch model
 
 | branch | what it builds | artifact |
 |---|---|---|
 | `mainline` (this) | kernel + DTB + modules + `boot.img` | `albus-mainline` |
-| `rootfs` | Debian rootfs + kernel boot image (timestamped) | `rootfs` |
+| `debian` | Debian rootfs + kernel boot image (timestamped) | `debian` |
+| `alpine` | Alpine rootfs + kernel boot image (timestamped) | `alpine` |
+
+The `debian.yml` and `alpine.yml` workflows are mirrored on this default
+branch so GitHub can register them; dispatch each one against its own branch.
 
 ## Artifacts (Actions run → `albus-mainline`)
 
@@ -22,8 +26,8 @@ GitHub Actions.
 |---|---|
 | `boot.img` (+ `boot.img.sha256`) | flashed to the `boot` partition under lk2nd |
 | `Image.gz` / `msm8953-motorola-albus.dtb` | raw kernel + DTB |
-| `modules.tar.gz` | kernel modules (consumed by the `rootfs` branch) |
-| `kernel-release.txt` | module tree name (consumed by the `rootfs` branch) |
+| `modules.tar.gz` | kernel modules (consumed by the `debian` and `alpine` branches) |
+| `kernel-release.txt` | module tree name (consumed by the `debian` and `alpine` branches) |
 
 ## Build contract
 
@@ -39,9 +43,10 @@ GitHub Actions.
 ## Flashing (needs an unlocked bootloader running **lk2nd ≥ 23**)
 
 ```sh
-# from the `rootfs` branch artifact (rootfs.zip), TS = YYYYMMDDHHMMSS
+# TS = YYYYMMDDHHMMSS; use debian.zip (debian branch) or alpine.zip
+# (alpine branch) for the userdata image.
 fastboot flash boot albus-<TS>-mainline.img
-fastboot flash userdata debian-<TS>.ext4
+fastboot flash userdata debian-<TS>.ext4   # or alpine-<TS>.ext4
 fastboot reboot
 ```
 
@@ -51,8 +56,9 @@ fastboot reboot
 
 ## First contact (needs no working screen)
 
-The device boots Debian straight from the `userdata` ext4 partition (no
-initramfs). USB comes up as an **RNDIS/NCM gadget** (`usb-gadget` service):
+The device boots the selected rootfs (Debian or Alpine) straight from the
+`userdata` ext4 partition (no initramfs). USB comes up as an **RNDIS/NCM
+gadget** (`usb-gadget` service):
 
 - device IP: `10.15.0.1` (DHCP hands the host an address in `10.15.0.50-200`)
 - login: `ssh root@10.15.0.1` — **any password** (keyless, USB-only stack)
@@ -64,7 +70,7 @@ nmcli device wifi list
 nmcli device wifi connect "SSID" password "secret"
 ```
 
-Debug helper: `albus-debug` dumps dmesg/USB/UDC/Wi-Fi state to stdout and
+Debian image: `albus-debug` dumps dmesg/USB/UDC/Wi-Fi state to stdout and
 `/var/log/albus-debug-*.txt`; rebooting twice saves the previous kernel log in
 `/sys/fs/pstore` (ramoops); `albus-resize` grows the rootfs to fill `userdata`
 on first boot.
@@ -79,5 +85,7 @@ on first boot.
   the branch builds)
 - `.github/workflows/mainline.yml` — CI: kernel rebuild on every run backed
   by a rolling ccache (~10 min warm), artifact upload; dispatchable
-- `.github/workflows/rootfs.yml` — mirror copy so the Debian workflow shows
-  up in the Actions list (dispatch it on the `rootfs` branch)
+- `.github/workflows/debian.yml` — Debian rootfs workflow mirror, so it shows
+  up in the Actions list (dispatch it on the `debian` branch)
+- `.github/workflows/alpine.yml` — Alpine rootfs workflow mirror, so it shows
+  up in the Actions list (dispatch it on the `alpine` branch)
