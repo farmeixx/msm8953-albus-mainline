@@ -26,14 +26,23 @@ jobs:
       - name: Branch sanity
         run: |
           test -e sh/build.sh || {
-            echo "Run this workflow on the 'rootfs' branch (it carries sh/ and conf/)."; exit 1
+            echo "Run this workflow on the 'debian' branch (it carries sh/ and conf/)."; exit 1
           }
 
       - name: Install rootfs toolchain
         run: |
           sudo apt-get update -yqq
           sudo apt-get install -yqq mmdebstrap debian-archive-keyring \
-            qemu-user-static binfmt-support e2fsprogs kmod zstd gzip git
+            qemu-user-static binfmt-support e2fsprogs kmod zstd gzip curl git
+
+      - name: Install current Debian archive keyring
+        run: |
+          keyring="$(curl -fsSL https://deb.debian.org/debian/pool/main/d/debian-archive-keyring/ \
+            | grep -oE 'debian-archive-keyring_[0-9][^"<]*_all\.deb' | sort -V | tail -1)"
+          test -n "$keyring"
+          curl -fsSL "https://deb.debian.org/debian/pool/main/d/debian-archive-keyring/$keyring" \
+            -o /tmp/debian-archive-keyring.deb
+          sudo dpkg -i /tmp/debian-archive-keyring.deb
 
       - name: Fetch the latest mainline kernel artifact
         run: bash sh/fetch-kernel.sh

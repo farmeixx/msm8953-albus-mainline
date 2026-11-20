@@ -1,6 +1,6 @@
-# msm8953-albus-mainline · branch `rootfs`
+# msm8953-albus-mainline · branch `debian`
 
-Debian (bookworm, arm64) rootfs image for the **Motorola Moto Z2 Play**
+Debian (stable, arm64; codename resolved at build time) rootfs image for the **Motorola Moto Z2 Play**
 (albus, MSM8953), built in GitHub Actions on top of the latest successful
 kernel artifact from the `mainline` branch.
 
@@ -9,7 +9,7 @@ kernel artifact from the `mainline` branch.
 | branch | what it builds | artifact |
 |---|---|---|
 | `mainline` | kernel + DTB + modules + `boot.img` | `albus-mainline` |
-| `rootfs` (this) | Debian rootfs + kernel boot image (timestamped) | `rootfs` |
+| `debian` (this) | Debian rootfs + kernel boot image (timestamped) | `rootfs` |
 
 ## Artifacts (Actions run → download = `rootfs.zip`)
 
@@ -43,13 +43,13 @@ the modules inside the ext4.
 ## Build contract
 
 `sh/fetch-kernel.sh` → latest successful `mainline.yml` run artifact;
-`sh/build.sh` → mmdebstrap bookworm arm64, device overlay + firmware +
+`sh/build.sh` → mmdebstrap stable arm64 (codename resolved at build time), device overlay + firmware +
 usb-gadget, `systemctl --root` enablement, chroot `sshd -t` sanity check,
 mkfs.ext4 with `-d` staging (`-m 0 -N 32768`), e2fsck, free-space gate;
 the workflow stamps `debian-<TS>.ext4` + `albus-<TS>-mainline.img` +
 `SHA256SUMS.txt` when publishing the `rootfs` artifact.
 
-## Layout (branch `rootfs`)
+## Layout (branch `debian`)
 
 - `conf/device.conf`, `conf/rootfs.conf`, `conf/usb.conf`, `conf/firmware.conf`
   — device-specific data (manipulation of scripts is not needed for porting)
@@ -59,7 +59,7 @@ the workflow stamps `debian-<TS>.ext4` + `albus-<TS>-mainline.img` +
 - `sh/firmware.sh` — generic firmware importer
 - `distros/debian/rootfs/` — the device overlay (services, sshd policy,
   NetworkManager policy, albus helpers)
-- `.github/workflows/rootfs.yml` — CI (dispatchable; the default branch is
+- `.github/workflows/debian.yml` — CI (dispatchable; the default branch is
   `mainline`, so this workflow mirrors there too — when dispatching, pick
-  the `rootfs` branch)
+  the `debian` branch)
 - `.github/workflows/mainline.yml` — mirror copy of the kernel workflow
