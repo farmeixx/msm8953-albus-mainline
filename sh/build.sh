@@ -9,7 +9,7 @@ set -euo pipefail
 : "${OUT_DIR:?set OUT_DIR}"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-source "$ROOT/conf/rootfs.conf"
+source "$ROOT/conf/debian.conf"
 source "$ROOT/conf/device.conf"
 
 DEBIAN_SUITE="${DEBIAN_SUITE:?}"
@@ -149,7 +149,7 @@ sudo rm -f "$STAGE/usr/bin/qemu-aarch64-static"
 
 #------------------------------------------------------------------#
 
-# Fixed initial ext4 capacity (conf/rootfs.conf). albus-resize grows / on
+# Fixed initial ext4 capacity (conf/debian.conf). albus-resize grows / on
 # userdata at first boot. Refuse to publish an image without safe free space.
 USED_MB="$(sudo du -sm "$STAGE" | awk '{print $1}')"
 IMAGE_MB="$IMAGE_SIZE_MB"

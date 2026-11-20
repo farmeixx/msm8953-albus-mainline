@@ -9,9 +9,10 @@ kernel artifact from the `mainline` branch.
 | branch | what it builds | artifact |
 |---|---|---|
 | `mainline` | kernel + DTB + modules + `boot.img` | `albus-mainline` |
-| `debian` (this) | Debian rootfs + kernel boot image (timestamped) | `rootfs` |
+| `debian` (this) | Debian rootfs + kernel boot image (timestamped) | `debian` |
+| `alpine` | Alpine rootfs + kernel boot image (timestamped) | `alpine` |
 
-## Artifacts (Actions run → download = `rootfs.zip`)
+## Artifacts (Actions run → download = `debian.zip`)
 
 | file | use |
 |---|---|
@@ -47,11 +48,11 @@ the modules inside the ext4.
 usb-gadget, `systemctl --root` enablement, chroot `sshd -t` sanity check,
 mkfs.ext4 with `-d` staging (`-m 0 -N 32768`), e2fsck, free-space gate;
 the workflow stamps `debian-<TS>.ext4` + `albus-<TS>-mainline.img` +
-`SHA256SUMS.txt` when publishing the `rootfs` artifact.
+`SHA256SUMS.txt` when publishing the `debian` artifact.
 
 ## Layout (branch `debian`)
 
-- `conf/device.conf`, `conf/rootfs.conf`, `conf/usb.conf`, `conf/firmware.conf`
+- `conf/device.conf`, `conf/debian.conf`, `conf/usb.conf`, `conf/firmware.conf`
   — device-specific data (manipulation of scripts is not needed for porting)
 - `sh/build.sh` — the rootfs builder
 - `sh/fetch-kernel.sh` — kernel artifact fetcher
@@ -59,7 +60,6 @@ the workflow stamps `debian-<TS>.ext4` + `albus-<TS>-mainline.img` +
 - `sh/firmware.sh` — generic firmware importer
 - `distros/debian/rootfs/` — the device overlay (services, sshd policy,
   NetworkManager policy, albus helpers)
-- `.github/workflows/debian.yml` — CI (dispatchable; the default branch is
-  `mainline`, so this workflow mirrors there too — when dispatching, pick
-  the `debian` branch)
-- `.github/workflows/mainline.yml` — mirror copy of the kernel workflow
+- `.github/workflows/debian.yml` — CI (dispatchable; the workflow file also
+  exists on the default branch `mainline` so GitHub can register it — when
+  dispatching, pick the `debian` branch)
